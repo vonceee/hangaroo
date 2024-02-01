@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangaroo Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #word-display {
+            font-size: 20px;
+            margin: 10px 0;
+            white-space: pre-line;
+            text-align: center;
+        }
+        #keyboard {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+        #scoreboard {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        #clue-buttons {
+            display: flex;
+            margin-top: 10px;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Hangaroo Game</h1>
+<div id="word-display"></div>
+<div id="keyboard"></div>
+<div id="scoreboard"></div>
+<div id="clue-buttons">
+    <button onclick="useClue('consonant')">Use Consonant Clue</button>
+    <button onclick="useClue('vowel')">Use Vowel Clue</button>
+</div>
+
+<script>
+	let totalPoints = 0;
+    let incorrectGuesses = 0;
+    let currentRound = 0;
+    let currentWord = "";
+    let currentWordObject = {};
+    let currentQuestion = "";
+    let guessedLetters = [];
+    let clues = 3;
+	
+    function createKeyboard() {
+        let keyboardDiv = document.getElementById("keyboard");
+        keyboardDiv.innerHTML = "";
+
+        const keyboardLayout = ["abcdefghijklmnopqrstuvwxyz"];
+
+        for (let row of keyboardLayout) {
+            for (let letter of row) {
+                let button = document.createElement("button");
+                button.textContent = letter;
+                button.addEventListener("click", () => handleGuess(letter));
+                keyboardDiv.appendChild(button);
+            }
+        }
+    }
+
+    function useClue(clueCategory) {
+        const clueCost = 25;
+		
+		if (clues <= 0) {
+        alert("You have no more clues left!");
+        return;
+		}
+
+        if (totalPoints >= clueCost) {
+            let possibleClues = getPossibleClues(clueCategory);
+            let randomClue = getRandomClue(possibleClues);
+
+            if (randomClue) {
+                guessedLetters.push(randomClue);
+                totalPoints -= clueCost;
+                clues--;
+                alert(`Clue used! The letter is: ${randomClue}`);
+                updateDisplay();
+                updateScoreboard();
+				
+				if (new Set(currentWord.split("")).size === guessedLetters.length) {
+					alert(`Congratulations! You guessed the word: ${currentWord}`);
+					totalPoints += 10;
+					startRound();
+					}
+            }
+        } else {
+            alert("Not enough points to avail a clue!");
+        }
+    }
+
+    function getPossibleClues(clueCategory) {
+        let possibleClues = "abcdefghijklmnopqrstuvwxyz".split("").filter(letter => !guessedLetters.includes(letter));
+
+        if (clueCategory === "vowel") {
+            possibleClues = possibleClues.filter(letter => "aeiou".includes(letter) && currentWord.includes(letter));
+			if (possibleClues.length === 0) {
+            alert('There are no more vowels in the word!');
+			}
+        } else {
+            possibleClues = possibleClues.filter(letter => !"aeiou".includes(letter) && currentWord.includes(letter));
+			if (possibleClues.length === 0) {
+            alert('There are no more consonant in the word!');
+			}
+        }
+
+        return possibleClues;
+    }
+
+    function getRandomClue(possibleClues) {
+        return possibleClues.length > 0 ? possibleClues[Math.floor(Math.random() * possibleClues.length)] : null;
+    }
+
+    let easyWords = [
+        { word: "apple", question: "A fruit often associated with teachers." },
+        { word: "banana", question: "A yellow fruit with a peel." },
+        { word: "orange", question: "A citrus fruit with a tough outer layer." },
+        { word: "python", question: "A high-level programming language." },
+        { word: "hangaroo", question: "A word-guessing game with a kangaroo theme." },
+        { word: "giraffe", question: "A long-necked mammal found in Africa." },
+        { word: "elephant", question: "A large land mammal known for its tusks." },
+        { word: "keyboard", question: "An input device used for typing on a computer." },
+        { word: "coffee", question: "A popular caffeinated beverage." },
+        { word: "computer", question: "An electronic device for processing data." }
+    ];
+
+    let moderateWords = [
+        { word: "programming", question: "The process of writing code for software development." },
+        { word: "algorithm", question: "A set of instructions or rules for solving a problem." },
+        { word: "database", question: "A structured collection of data." },
+        { word: "network", question: "A system of interconnected computers or devices." },
+        { word: "javascript", question: "A scripting language used for web development." },
+        { word: "python", question: "A versatile programming language." },
+        { word: "java", question: "A popular object-oriented programming language." },
+        { word: "html", question: "A markup language for creating web pages." },
+        { word: "css", question: "A style sheet language for designing web pages." },
+        { word: "cloud", question: "A network of remote servers for storing and managing data." }
+    ];
+
+    let difficultWords = [
+        { word: "cybersecurity", question: "The practice of protecting computer systems and networks from digital attacks." },
+        { word: "blockchain", question: "A decentralized and distributed ledger technology." },
+        { word: "machinelearning", question: "A subset of artificial intelligence that enables machines to learn from data." },
+        { word: "artificialintelligence", question: "The simulation of human intelligence in machines." },
+        { word: "webdevelopment", question: "The process of building and maintaining websites." },
+        { word: "datascience", question: "The extraction of knowledge and insights from structured and unstructured data." },
+        { word: "frontend", question: "The part of a website that users interact with directly." },
+        { word: "backend", question: "The server-side of a website, responsible for processing requests." },
+        { word: "virtualization", question: "The creation of a virtual version of a resource, such as an operating system or server." },
+        { word: "docker", question: "A platform for developing, shipping, and running applications in containers." }
+    ];
+
+    let categories = ["Easy", "Moderate", "Difficult"];
+    let words = [easyWords, moderateWords, difficultWords];
+
+    function startRound() {
+        if (currentRound < categories.length - 1) {
+            currentWordObject = getRandomWord();
+            currentWord = currentWordObject.word;
+            currentQuestion = currentWordObject.question;
+            guessedLetters = [];
+
+            updateDisplay();
+            updateScoreboard();
+        } else {
+            alert(`Congratulations! You completed all categories./nPoints: ${totalPoints}`);
+            resetGame();
+        }
+    }
+
+    function getRandomWord() {
+        let categoryIndex = currentRound;
+        let availableQuestions = words[categoryIndex].filter(wordObj => !wordObj.used);
+        
+        if (availableQuestions.length > 0) {
+            let randomIndex = Math.floor(Math.random() * availableQuestions.length);
+            let selectedWordObject = availableQuestions[randomIndex];
+            selectedWordObject.used = true;
+            return selectedWordObject;
+        } else {
+            alert(`Congratulations! You have finished the ${categories[currentRound]} round! Moving onto the next round.`);
+            currentRound++;
+            return getRandomWord();
+        }
+    }
+
+    function resetQuestionsUsage() {
+        for (let category of words) {
+            for (let wordObj of category) {
+                wordObj.used = false;
+            }
+        }
+    }
+
+    function updateDisplay() {
+        let display = `${currentQuestion}\n\n`;
+        for (let letter of currentWord) {
+            if (guessedLetters.includes(letter) || !isLetter(letter)) {
+                display += letter + " ";
+            } else {
+                display += "_ ";
+            }
+        }
+        document.getElementById("word-display").textContent = display.trim();
+    }
+
+    function updateScoreboard() {
+    let answeredQuestions = words[currentRound].filter(wordObj => wordObj.used).length;
+    document.getElementById("scoreboard").textContent = `Points: ${totalPoints} | Incorrect Guesses: ${incorrectGuesses}/3 | Clues left: ${clues} | Category: ${categories[currentRound]} | Question: ${answeredQuestions}/${words[currentRound].length}`;
+	}
+
+    function handleGuess(letter) {
+		let occurrences = getAllOccurrences(currentWord, letter);
+
+		if (occurrences.length > 0) {
+			occurrences.forEach(position => {
+				if (!guessedLetters.includes(letter) && currentWord[position] === letter) {
+					guessedLetters.push(letter);
+
+					if (guessedLetters.length === new Set(currentWord.split("")).size) {
+						alert(`Congratulations! You guessed the word: ${currentWord}`);
+						totalPoints += 10;
+						startRound();
+					}
+
+					updateDisplay();
+					updateScoreboard();
+				}
+			});
+		} else {
+			incorrectGuesses++;
+
+			if (incorrectGuesses === 3) {
+				alert(`Game over. You reached the maximum incorrect guesses.\nPoints: ${totalPoints}`);
+				resetGame();
+			} else {
+				updateScoreboard();
+			}
+		}
+	}
+	
+	function getAllOccurrences(word, letter) {
+		let occurrences = [];
+		for (let i = 0; i < word.length; i++) {
+			if (word[i] === letter) {
+				occurrences.push(i);
+			}
+		}
+		return occurrences;
+	}
+
+    function isLetter(char) {
+        return /^[a-zA-Z]$/.test(char);
+    }
+
+    function resetGame() {
+        totalPoints = 0;
+        currentRound = 0;
+		incorrectGuesses = 0;
+        clues = 3;
+        resetQuestionsUsage();
+        startRound();
+    }
+
+    function initGame() {
+        resetQuestionsUsage();
+        startRound();
+        createKeyboard();
+    }
+
+    initGame();
+</script>
+
+</body>
+</html>
